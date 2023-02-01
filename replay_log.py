@@ -15,7 +15,7 @@ if __name__ == '__main__':
     filepath = "data/run1_0129" # example file name (change)
     with open(filepath, 'rb') as handle:
         data = pickle.load(handle)
-        # print(data)
+        # print(data)hh
         # for i in data:
         #     print(data.get(i), "\n\n\n")
         #filtering examplesc
