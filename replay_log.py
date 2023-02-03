@@ -12,11 +12,13 @@ import csv
 import datetime
 import os
 import sys
+import numpy as np
 
 import matplotlib.pyplot as plt
 from matplotlib import animation
+import matplotlib.colors as mcolors
 
-from data_generator import existing_file_generator
+from data_generator import existing_file_generator, pickle_file_generator
 
 # Define some empty lists to hold our data
 # These are global scope, so all functions can access
@@ -41,7 +43,8 @@ def plotter_init():
     del enemy_x[:]
     del enemy_y[:]
 
-    ship_plot.set_data([], [])
+    # ship_plot.set_data([], [])
+    ship_plot.set_offsets(np.column_stack(([],[])))
     friendly_plot.set_data([], [])
     enemy_plot.set_data([], [])
 
@@ -63,14 +66,15 @@ def update_plotter(data):
     ship_separation = int(len(ships) / 2)
     friendly_separation = int(len(friendly_missiles) / 3)
     enemy_separation = int(len(enemy_missiles) / 3)
-    ships_x, ships_y = ships[:ship_separation], ships[ship_separation:]
+    ships_M = np.column_stack((ships[:ship_separation], ships[ship_separation:]))
     friend_x, friend_y = friendly_missiles[:friendly_separation], friendly_missiles[friendly_separation:friendly_separation*2]
     enemy_x, enemy_y = enemy_missiles[:enemy_separation], enemy_missiles[enemy_separation:enemy_separation*2]
 
     ax.figure.canvas.draw()
 
     # Update the plots
-    ship_plot.set_data(ships_x, ships_y)
+    # ship_plot.set_data(ships_x, ships_y)
+    ship_plot.set_offsets(ships_M)
     friendly_plot.set_data(friend_x, friend_y)
     enemy_plot.set_data(enemy_x, enemy_y)
 
@@ -88,13 +92,16 @@ if __name__ == '__main__':
     SHIP_FILEPATH = f"ship_locations_{args.id}.csv"
     FRIENDLY_TRACK_FILEPATH = f"friendly_missiles_locations_{args.id}.csv"
     ENEMY_TRACK_FILEPATH = f"enemy_missiles_locations_{args.id}.csv"
+    PICLKE_FILEPATH = f"data/run1_{args.id}"
 
     print("Setting up the plot figures ...")
     fig, ax = plt.subplots()
     ax.set_title(f"Replay ID: {args.id}")
-    ship_plot, = ax.plot([], [], 'go', label="Ships")
-    friendly_plot, = ax.plot([], [], 'bo', label="Friendly Missiles")
-    enemy_plot, = ax.plot([], [], 'ro', label="Enemy Missiles")
+    cmap, norm = mcolors.from_levels_and_colors([4, 3, 2, 1, 0], ['green', 'yellow', 'orange', 'red'])
+    ship_plot = ax.scatter([], [], c=[], cmap=cmap, norm=norm, label="Ships")
+    #ship_plot, = ax.plot([], [], 'bo', label="Ships")
+    friendly_plot, = ax.plot([], [], 'b^', label="Friendly Missiles")
+    enemy_plot, = ax.plot([], [], 'rv', label="Enemy Missiles")
     ax.legend()
 
     # Set up generator function to retrieve data file
@@ -102,7 +109,8 @@ if __name__ == '__main__':
 
     try:
         print(f"Attemping to use existing files with id {args.id} for plotting ...")
-        data_generator_fn = existing_file_generator(SHIP_FILEPATH, FRIENDLY_TRACK_FILEPATH, ENEMY_TRACK_FILEPATH)
+        #data_generator_fn = existing_file_generator(SHIP_FILEPATH, FRIENDLY_TRACK_FILEPATH, ENEMY_TRACK_FILEPATH)
+        data_generator_fn = pickle_file_generator(PICLKE_FILEPATH)
     except FileNotFoundError as exc:
         print(exc)
         sys.exit(-1)
