@@ -26,14 +26,16 @@ def pickle_file_generator(file_path):
         asset_info = step_info.get("Assets")[1:]
         track_info = step_info.get("Tracks")
         for item in asset_info:
-            ship_locations.extend([item[3][0], item[3][1]])
+            # ship x, ship y, ship health
+            ship_locations.extend([item[3][0], item[3][1], item[2]])
 
         for item in track_info:
+            # missile x, missile y, missile z
             if "ENEMY" in item[1]:
                 enemy_missiles.extend([item[3][0], item[3][1], item [3][2]])
             else:
                 friendly_missiles.extend([item[3][0], item[3][1], item [3][2]])
-        yield(process_line(ship_locations, 2), process_line(friendly_missiles, 3), process_line(enemy_missiles, 3))
+        yield(process_line(ship_locations, 3), process_line(friendly_missiles, 3), process_line(enemy_missiles, 3))
 
 def existing_file_generator(ship_fp, friend_fp, enemy_fp, delimiter=','):
     """

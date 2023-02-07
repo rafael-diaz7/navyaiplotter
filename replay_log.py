@@ -17,6 +17,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import animation
 import matplotlib.colors as mcolors
+import matplotlib.cm as cm
 
 from data_generator import existing_file_generator, pickle_file_generator
 
@@ -43,8 +44,8 @@ def plotter_init():
     del enemy_x[:]
     del enemy_y[:]
 
-    # ship_plot.set_data([], [])
-    ship_plot.set_offsets(np.column_stack(([],[])))
+    ship_plot.set_data([], [])
+    # ship_plot.set_offsets(np.column_stack(([],[])))
     friendly_plot.set_data([], [])
     enemy_plot.set_data([], [])
 
@@ -63,22 +64,40 @@ def update_plotter(data):
 
     ships, friendly_missiles, enemy_missiles = data[0], data[1], data[2]  # pylint: disable=C0103
 
-    ship_separation = int(len(ships) / 2)
-    friendly_separation = int(len(friendly_missiles) / 3)
-    enemy_separation = int(len(enemy_missiles) / 3)
-    ships_M = np.column_stack((ships[:ship_separation], ships[ship_separation:]))
-    friend_x, friend_y = friendly_missiles[:friendly_separation], friendly_missiles[friendly_separation:friendly_separation*2]
-    enemy_x, enemy_y = enemy_missiles[:enemy_separation], enemy_missiles[enemy_separation:enemy_separation*2]
-
+    # ship_separation = int(len(ships) / 2)
+    # friendly_separation = int(len(friendly_missiles) / 3)
+    # enemy_separation = int(len(enemy_missiles) / 3)
+    # ships_M = np.column_stack((ships[:ship_separation], ships[ship_separation:]))
+    # friend_x, friend_y = friendly_missiles[:friendly_separation], friendly_missiles[friendly_separation:friendly_separation*2]
+    # enemy_x, enemy_y = enemy_missiles[:enemy_separation], enemy_missiles[enemy_separation:enemy_separation*2]
+    # color_map = {4: 'green', 3: 'yellow', 2: 'orange', 1: 'red'}
+    ships_x, ships_y, ships_health = process_generator(ships, 3)
+    ships_health = np.array(ships_health)
+    # ships_M = np.column_stack((ships_x, ships_y))
+    # print(ships_health)
+    # norm = (ships_health - min(ships_health)) / (max(ships_health) - min(ships_health))
+    # colors = list(map(lambda h: color_map[h], ships_health))
+    friend_x, friend_y, friend_z = process_generator(friendly_missiles, 3)
+    enemy_x, enemy_y, enemy_z = process_generator(enemy_missiles, 3)
     ax.figure.canvas.draw()
 
     # Update the plots
-    # ship_plot.set_data(ships_x, ships_y)
-    ship_plot.set_offsets(ships_M)
+    ship_plot.set_data(ships_x, ships_y)
+    # ship_plot.set_offsets(ships_M)
+    # ship_plot.set_array(norm)
     friendly_plot.set_data(friend_x, friend_y)
     enemy_plot.set_data(enemy_x, enemy_y)
 
     return ship_plot, friendly_plot, enemy_plot
+
+def process_generator(yieled_list, num_features):
+    return_list = []
+    num_objects = int(len(yieled_list)/num_features)
+    if not num_objects:
+        return [[],[],[]]
+    for i in range(num_features):
+        return_list.append(yieled_list[i * num_objects : (i + 1) * num_objects])
+    return return_list
 
 
 if __name__ == '__main__':
@@ -97,9 +116,9 @@ if __name__ == '__main__':
     print("Setting up the plot figures ...")
     fig, ax = plt.subplots()
     ax.set_title(f"Replay ID: {args.id}")
-    cmap, norm = mcolors.from_levels_and_colors([4, 3, 2, 1, 0], ['green', 'yellow', 'orange', 'red'])
-    ship_plot = ax.scatter([], [], c=[], cmap=cmap, norm=norm, label="Ships")
-    #ship_plot, = ax.plot([], [], 'bo', label="Ships")
+    # cmap, norm = mcolors.from_levels_and_colors([4, 3, 2, 1, 0], ['green', 'yellow', 'orange', 'red'])
+    # ship_plot = ax.scatter([], [], c=[], cmap=cm.viridis, label="Ships")
+    ship_plot, = ax.plot([], [], 'bo', label="Ships")
     friendly_plot, = ax.plot([], [], 'b^', label="Friendly Missiles")
     enemy_plot, = ax.plot([], [], 'rv', label="Enemy Missiles")
     ax.legend()
