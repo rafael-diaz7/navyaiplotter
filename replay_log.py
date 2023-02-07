@@ -23,7 +23,7 @@ from data_generator import existing_file_generator, pickle_file_generator
 
 # Define some empty lists to hold our data
 # These are global scope, so all functions can access
-ships_x, ships_y, friend_x, friend_y, enemy_x, enemy_y = [], [], [], [], [], []
+ships_x, ships_y, ships_health, friend_x, friend_y, enemy_x, enemy_y = [], [], [], [], [], [], []
 
 
 def plotter_init():
@@ -39,13 +39,13 @@ def plotter_init():
     # Delete all elements from the list
     del ships_x[:]
     del ships_y[:]
+    del ships_health[:]
     del friend_x[:]
     del friend_y[:]
     del enemy_x[:]
     del enemy_y[:]
 
-    ship_plot.set_data([], [])
-    # ship_plot.set_offsets(np.column_stack(([],[])))
+    ship_plot.set_offsets(np.column_stack(([],[])))
     friendly_plot.set_data([], [])
     enemy_plot.set_data([], [])
 
@@ -64,27 +64,16 @@ def update_plotter(data):
 
     ships, friendly_missiles, enemy_missiles = data[0], data[1], data[2]  # pylint: disable=C0103
 
-    # ship_separation = int(len(ships) / 2)
-    # friendly_separation = int(len(friendly_missiles) / 3)
-    # enemy_separation = int(len(enemy_missiles) / 3)
-    # ships_M = np.column_stack((ships[:ship_separation], ships[ship_separation:]))
-    # friend_x, friend_y = friendly_missiles[:friendly_separation], friendly_missiles[friendly_separation:friendly_separation*2]
-    # enemy_x, enemy_y = enemy_missiles[:enemy_separation], enemy_missiles[enemy_separation:enemy_separation*2]
-    # color_map = {4: 'green', 3: 'yellow', 2: 'orange', 1: 'red'}
     ships_x, ships_y, ships_health = process_generator(ships, 3)
     ships_health = np.array(ships_health)
-    # ships_M = np.column_stack((ships_x, ships_y))
-    # print(ships_health)
-    # norm = (ships_health - min(ships_health)) / (max(ships_health) - min(ships_health))
-    # colors = list(map(lambda h: color_map[h], ships_health))
-    friend_x, friend_y, friend_z = process_generator(friendly_missiles, 3)
-    enemy_x, enemy_y, enemy_z = process_generator(enemy_missiles, 3)
+    color_map = {4: 'green', 3: 'yellow', 2: 'orange', 1: 'red'}
+    colors = list(map(lambda h: color_map[h], ships_health))
+    friend_x, friend_y, _ = process_generator(friendly_missiles, 3)
+    enemy_x, enemy_y, _ = process_generator(enemy_missiles, 3)
     ax.figure.canvas.draw()
 
     # Update the plots
-    ship_plot.set_data(ships_x, ships_y)
-    # ship_plot.set_offsets(ships_M)
-    # ship_plot.set_array(norm)
+    ship_plot = ax.scatter(ships_x, ships_y, c=colors, cmap=cm.viridis, label="Ships")
     friendly_plot.set_data(friend_x, friend_y)
     enemy_plot.set_data(enemy_x, enemy_y)
 
@@ -102,23 +91,18 @@ def process_generator(yieled_list, num_features):
 
 if __name__ == '__main__':
 
-    parser = argparse.ArgumentParser(description='Program to plot receive and plot binary data from Arduino')  # pylint: disable=C0301
+    parser = argparse.ArgumentParser(description='Program to replay runs from the Navy AI Challenge')  # pylint: disable=C0301
     parser.add_argument('--id', default=None, help="ID for log")
     parser.add_argument('--save', default=None, action='store_true', help="Saves animation as .mp4")
 
     args = parser.parse_args()
     
-    SHIP_FILEPATH = f"ship_locations_{args.id}.csv"
-    FRIENDLY_TRACK_FILEPATH = f"friendly_missiles_locations_{args.id}.csv"
-    ENEMY_TRACK_FILEPATH = f"enemy_missiles_locations_{args.id}.csv"
-    PICLKE_FILEPATH = f"data/run1_{args.id}"
+    PICLKE_FILEPATH = os.path.join("data", f"run1_{args.id}")
 
     print("Setting up the plot figures ...")
     fig, ax = plt.subplots()
     ax.set_title(f"Replay ID: {args.id}")
-    # cmap, norm = mcolors.from_levels_and_colors([4, 3, 2, 1, 0], ['green', 'yellow', 'orange', 'red'])
-    # ship_plot = ax.scatter([], [], c=[], cmap=cm.viridis, label="Ships")
-    ship_plot, = ax.plot([], [], 'bo', label="Ships")
+    ship_plot = ax.scatter([], [], c=[], cmap=cm.viridis, label="Ships")
     friendly_plot, = ax.plot([], [], 'b^', label="Friendly Missiles")
     enemy_plot, = ax.plot([], [], 'rv', label="Enemy Missiles")
     ax.legend()
@@ -128,7 +112,6 @@ if __name__ == '__main__':
 
     try:
         print(f"Attemping to use existing files with id {args.id} for plotting ...")
-        #data_generator_fn = existing_file_generator(SHIP_FILEPATH, FRIENDLY_TRACK_FILEPATH, ENEMY_TRACK_FILEPATH)
         data_generator_fn = pickle_file_generator(PICLKE_FILEPATH)
     except FileNotFoundError as exc:
         print(exc)
@@ -144,8 +127,6 @@ if __name__ == '__main__':
 
         if args.save:
             ani.save(f"replay{args.id}.mpy4")
-            # writergif = animation.PillowWriter(fps=10)
-            # ani.save(f'replay{args.id}.gif', writer = writergif)
 
         print("Done!")
     else:
